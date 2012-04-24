@@ -418,6 +418,7 @@ class GitFlow(object):
         remote_branch = self.origin_name(branch)
         if remote_branch in self.branch_names(remote=True):
             if fetch:
+                self.origin().fetch(branch)
                 repo.fetch(remote_branch)
             self.require_branches_equal(branch, remote_branch)
 
