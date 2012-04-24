@@ -419,7 +419,6 @@ class GitFlow(object):
         if remote_branch in self.branch_names(remote=True):
             if fetch:
                 self.origin().fetch(branch)
-                repo.fetch(remote_branch)
             self.require_branches_equal(branch, remote_branch)
 
     @requires_repo
@@ -586,7 +585,7 @@ class GitFlow(object):
 
     @requires_initialized
     def finish(self, identifier, name, fetch, rebase, keep, force_delete,
-               tagging_info):
+               tagging_info, push = False, message = None):
         """
         Finishes a branch of the given type, with the given short name.
 
@@ -609,7 +608,7 @@ class GitFlow(object):
                         )
         return mgr.finish(mgr.shorten(branch.name), fetch=fetch, rebase=rebase,
                           keep=keep, force_delete=force_delete,
-                          tagging_info=tagging_info)
+                          tagging_info=tagging_info, push = push, message = message)
 
     @requires_initialized
     def checkout(self, identifier, name):

@@ -316,7 +316,7 @@ class FeatureBranchManager(BranchManager):
 
 
     def finish(self, name, fetch=False, rebase=False, keep=False,
-               force_delete=False, push=False, tagging_info=None):
+               force_delete=False, push=False, tagging_info=None, message=None):
         """
         Finishes the branch of type `feature` named :attr:`name`.
         Finishing means that:
@@ -348,8 +348,7 @@ class FeatureBranchManager(BranchManager):
 
         to_push = [self.gitflow.develop_name()]
 
-        self.merge(name, self.gitflow.develop_name(),
-                   'Finished %(identifier)s %(short_name)s.')
+        self.merge(name, self.gitflow.develop_name(),message)
         if not keep:
             self.delete(name, force=force_delete)
             to_push.append(':'+full_name)
