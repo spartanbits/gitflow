@@ -712,6 +712,7 @@ class GitFlow(object):
         origin.fetch()
         # configure remote tracking
         repo.branches[full_name].set_tracking_branch(info.remote_ref)
+        return full_name
 
 
     @requires_initialized
