@@ -393,7 +393,7 @@ class ReleaseBranchManager(BranchManager):
 
 
     def finish(self, name, fetch=False, rebase=False, keep=False,
-               force_delete=False, push=False, tagging_info=None):
+               force_delete=False, push=False, tagging_info=None, message = None):
         assert rebase == False, "Rebasing a release branch does not make any sense."
         # require release branch to exist
         # if flag-fetch: fetch master und develop
@@ -407,7 +407,7 @@ class ReleaseBranchManager(BranchManager):
         to_push = [self.gitflow.develop_name(), self.gitflow.master_name()]
 
         self.merge(name, self.gitflow.master_name(),
-                'Finished %s %s.' % (self.identifier, name))
+                'Finished %s %s onto %s. %s' % (self.identifier, name, self.gitflow.master_name(), message if message else ''))
 
         tag = None
         if tagging_info is not None:
@@ -427,7 +427,7 @@ class ReleaseBranchManager(BranchManager):
         # describe' on either branch
         self.merge(tag or self.gitflow.master(),
                    self.gitflow.develop_name(),
-                   'Finished %s %s.' % (self.identifier, name))
+                   'Finished %s %s onto %s.' % (self.identifier, name, self.gitflow.develop_name()))
         if not keep:
             self.delete(name, force=force_delete)
             to_push.append(':'+full_name)
