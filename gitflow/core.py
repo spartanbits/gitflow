@@ -279,6 +279,10 @@ class GitFlow(object):
             return [r.name for r in self.repo.branches]
 
     @requires_repo
+    def active_branch(self):
+        return self.repo.active_branch.name
+
+    @requires_repo
     def nameprefix_or_current(self, identifier, prefix):
         """
         :param identifier:
