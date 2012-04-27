@@ -188,6 +188,15 @@ class GitFlow(object):
         self._init_develop_branch()
         return self
 
+    def is_single_commit_branch(self, from_, to):
+        git = self.repo.git
+        commits = git.rev_list('%s...%s' % (from_, to), n=2).split()
+        return len(commits) == 1
+
+    def get_last_commit_message(self,branch):
+        git = self.repo.git
+        return git.get_object_data(branch)[-1].split('\n\n')[-1].strip()
+
     def is_initialized(self):
         return (self.repo and
                 self.is_set('gitflow.branch.master') and
