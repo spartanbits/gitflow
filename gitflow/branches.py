@@ -348,7 +348,10 @@ class FeatureBranchManager(BranchManager):
 
         to_push = [self.gitflow.develop_name()]
 
-        self.merge(name, self.gitflow.develop_name(),message)
+        if not message:
+            message = ''
+        self.merge(name, self.gitflow.develop_name(),
+                   "Merged feature '%s' onto %s. %s" % (name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
             to_push.append(':'+full_name)
@@ -406,8 +409,10 @@ class ReleaseBranchManager(BranchManager):
 
         to_push = [self.gitflow.develop_name(), self.gitflow.master_name()]
 
+        if not message:
+            message = ''
         self.merge(name, self.gitflow.master_name(),
-                'Finished %s %s onto %s. %s' % (self.identifier, name, self.gitflow.master_name(), message if message else ''))
+                "Merged %s '%s' onto %s. %s" % (self.identifier, name, self.gitflow.master_name(), message))
 
         tag = None
         if tagging_info is not None:
@@ -427,7 +432,7 @@ class ReleaseBranchManager(BranchManager):
         # describe' on either branch
         self.merge(tag or self.gitflow.master(),
                    self.gitflow.develop_name(),
-                   'Finished %s %s onto %s.' % (self.identifier, name, self.gitflow.develop_name()))
+                   "Merged %s '%s' onto %s. %s" % (self.identifier, name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
             to_push.append(':'+full_name)
