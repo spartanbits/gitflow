@@ -236,6 +236,15 @@ class GitFlow(object):
         section, option = self._parse_setting(setting)
         self.repo.config_writer().set_value(section, option, value)
 
+    def set_option(self, section, option, value):
+        self.repo.config_writer().set_value(section, option, value)
+
+    def get_option(self, section, option):
+        try:
+            return self.repo.config_reader().get_value(section, option)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            return None
+
     def is_set(self, setting):
         return self.get(setting, None) is not None
 
