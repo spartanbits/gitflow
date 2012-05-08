@@ -824,11 +824,9 @@ class GitFlow(object):
 
     @requires_initialized
     def change_last_commit_message(self,identifier, name, message):
-        try:
-            self.repo.is_dirty(untracked_files=True)
-        except:
-            raise WorkdirIsDirtyError('Contains local changes checked into '
-                                      'the index but not committed.')
+        if self.repo.is_dirty(untracked_files=True):
+            raise WorkdirIsDirtyError('Your working dir is dirty. You have changes not commited in the index')
+
         self.checkout(identifier, name)
         #remove remote branch due to we are changing the history
         full_branch_name = self.get_prefix(identifier) + name
