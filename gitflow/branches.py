@@ -341,8 +341,14 @@ class FeatureBranchManager(BranchManager):
         assert not tagging_info, "FeatureBranchManager does not support tagging"
         gitflow = self.gitflow
         full_name = self.full_name(name)
+
         gitflow.must_be_uptodate(full_name, fetch=fetch)
-        gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
+
+        #If the branch is not merged we fetch new changes. If merged we could come from
+        #resolving conflicts
+        if not gitflow.is_merged_into(full_name, gitflow.develop_name()):
+            gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
+
         if rebase:
             gitflow.rebase(self.identifier, name, interactive=False)
 
@@ -404,9 +410,16 @@ class ReleaseBranchManager(BranchManager):
         #   diese muessen dann gleich $ORIGIN/master bzw. $ORIGIN/develop sein
         gitflow = self.gitflow
         full_name = self.full_name(name)
+
         gitflow.must_be_uptodate(full_name, fetch=fetch)
-        gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
-        gitflow.must_be_uptodate(gitflow.master_name(), fetch=fetch)
+
+        #If the branch is not merged we fetch new changes. If merged we could come from
+        #resolving conflicts
+        if not gitflow.is_merged_into(full_name, gitflow.develop_name()):
+            gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
+
+        if not gitflow.is_merged_into(full_name,gitflow.master_name()):
+            gitflow.must_be_uptodate(gitflow.master_name(), fetch=fetch)
 
         to_push = [self.gitflow.develop_name(), self.gitflow.master_name()]
 
