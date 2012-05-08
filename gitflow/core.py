@@ -376,12 +376,12 @@ class GitFlow(object):
         return (name, b.commit.hexsha, b == active_branch)
 
     @requires_repo
-    def is_dirty(self):
+    def is_dirty(self, untracked_files=False):
         """
         Returns whether or not the current working directory contains
         uncommitted changes.
         """
-        return self.repo.is_dirty()
+        return self.repo.is_dirty(untracked_files=untracked_files)
 
     @requires_repo
     def has_staged_commits(self):
@@ -833,3 +833,4 @@ class GitFlow(object):
         self.origin().push(':'+full_branch_name)
         self.repo.git.reset('HEAD^', **{'soft': True})
         self.repo.git.commit('.', **{'message': message})
+
