@@ -315,7 +315,7 @@ class FeatureBranchManager(BranchManager):
             name, base, fetch=fetch, must_be_on_default_base=False)
 
 
-    def finish(self, name, fetch=False, rebase=False, keep=False,
+    def finish(self, name, fetch=False, rebase=False, keep=False, keep_remote=False,
                force_delete=False, push=False, tagging_info=None, message=None):
         """
         Finishes the branch of type `feature` named :attr:`name`.
@@ -354,7 +354,8 @@ class FeatureBranchManager(BranchManager):
                    "Merged feature '%s' onto %s. %s" % (name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
-            to_push.append(':'+full_name)
+            if not keep_remote:
+                to_push.append(':'+full_name)
         if push:
             gitflow.origin().push(to_push)
 
@@ -395,7 +396,7 @@ class ReleaseBranchManager(BranchManager):
             version, base, fetch=fetch, must_be_on_default_base=True)
 
 
-    def finish(self, name, fetch=False, rebase=False, keep=False,
+    def finish(self, name, fetch=False, rebase=False, keep=False, keep_remote=False,
                force_delete=False, push=False, tagging_info=None, message = None):
         assert rebase == False, "Rebasing a release branch does not make any sense."
         # require release branch to exist
@@ -435,7 +436,8 @@ class ReleaseBranchManager(BranchManager):
                    "Merged %s '%s' onto %s. %s" % (self.identifier, name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
-            to_push.append(':'+full_name)
+            if not keep_remote:
+                to_push.append(':'+full_name)
         if push:
             gitflow.origin().push(to_push)
 

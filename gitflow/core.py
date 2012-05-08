@@ -625,9 +625,7 @@ class GitFlow(object):
             self.require_no_merge_conflict()
         except MergeConflict, e:
             raise Usage(e,
-                        "You can then complete the finish by running it again:",
-                        "    git flow %s finish %s" % (identifier, name)
-                        )
+                        "Please resolve conflict push changes to remote and then you can complete the finish by running this command again")
         return mgr.finish(mgr.shorten(branch.name), fetch=fetch, rebase=rebase,
                           keep=keep, force_delete=force_delete,
                           tagging_info=tagging_info, push = push, message = message)
