@@ -357,7 +357,7 @@ class FeatureBranchManager(BranchManager):
         if not message:
             message = ''
         self.merge(name, self.gitflow.develop_name(),
-                   "Merged feature '%s' onto %s. %s" % (name, self.gitflow.develop_name(), message))
+                   "Merged feature '%s' onto %s.\n%s" % (name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
             if not keep_remote:
@@ -446,7 +446,7 @@ class ReleaseBranchManager(BranchManager):
         # describe' on either branch
         self.merge(tag or self.gitflow.master(),
                    self.gitflow.develop_name(),
-                   "Merged %s '%s' onto %s. %s" % (self.identifier, name, self.gitflow.develop_name(), message))
+                   "Merged %s '%s' onto %s.\n%s" % (self.identifier, name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
             if not keep_remote:
