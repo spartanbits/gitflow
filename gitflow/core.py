@@ -606,7 +606,7 @@ class GitFlow(object):
 
 
     @requires_initialized
-    def finish(self, identifier, name, fetch, rebase, keep, force_delete,
+    def finish(self, identifier, name, fetch, rebase, keep, force_delete, keep_remote,
                tagging_info, push = False, message = None):
         """
         Finishes a branch of the given type, with the given short name.
@@ -627,7 +627,7 @@ class GitFlow(object):
             raise Usage(e,
                         "Please resolve conflict push changes to remote and then you can complete the finish by running this command again")
         return mgr.finish(mgr.shorten(branch.name), fetch=fetch, rebase=rebase,
-                          keep=keep, force_delete=force_delete,
+                          keep=keep, force_delete=force_delete, keep_remote=keep_remote,
                           tagging_info=tagging_info, push = push, message = message)
 
     @requires_initialized
