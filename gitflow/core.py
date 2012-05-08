@@ -22,7 +22,7 @@ from gitflow.util import itersubclasses
 from gitflow.exceptions import (NotInitialized, BranchExistsError,
                                 BranchTypeExistsError, MergeConflict,
                                 NoSuchRemoteError, NoSuchBranchError,
-                                Usage, BadObjectError)
+                                Usage, BadObjectError, WorkdirIsDirtyError)
 
 __copyright__ = "2010-2011 Vincent Driessen; 2012 Hartmut Goebel"
 __license__ = "BSD"
@@ -821,3 +821,17 @@ class GitFlow(object):
         branch = repo.create_head(full_name, remote_branch)
         branch.set_tracking_branch(remote_branch)
         return branch.checkout()
+
+    @requires_initialized
+    def change_last_commit_message(self,identifier, name, message):
+        try:
+            self.repo.is_dirty(untracked_files=True)
+        except:
+            raise WorkdirIsDirtyError('Contains local changes checked into '
+                                      'the index but not committed.')
+        self.checkout(identifier, name)
+        #remove remote branch due to we are changing the history
+        full_branch_name = self.get_prefix(identifier) + name
+        self.origin().push(':'+full_branch_name)
+        self.repo.git.reset('HEAD^', **{'soft': True})
+        self.repo.git.commit('.', **{'message': message})
