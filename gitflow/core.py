@@ -834,3 +834,11 @@ class GitFlow(object):
         self.repo.git.reset('HEAD^', **{'soft': True})
         self.repo.git.commit('.', **{'message': message})
 
+    @requires_initialized
+    def remote_prune(self, delete=False, name='origin', ):
+        remote = self.require_remote(name)
+        stale_refs = remote.stale_refs
+        ret_value = [str(i) for i in stale_refs]
+        if delete:
+            RemoteReference.delete(self.repo, *stale_refs)
+        return ret_value
