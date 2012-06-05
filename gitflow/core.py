@@ -606,8 +606,8 @@ class GitFlow(object):
 
 
     @requires_initialized
-    def finish(self, identifier, name, fetch, rebase, keep, force_delete, keep_remote,
-               tagging_info, push = False, message = None):
+    def finish(self, identifier, name, fetch, rebase, keep, force_delete,
+               tagging_info, push = False, message = None, keep_remote=False):
         """
         Finishes a branch of the given type, with the given short name.
 
