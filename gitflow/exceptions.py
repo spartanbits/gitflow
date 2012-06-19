@@ -57,3 +57,5 @@ class BranchTypeExistsError(ObjectError):
 class NoSuchLocalBranchError(NoSuchBranchError):
     def __str__(self):
         return ("Local branch '%s' does not exist." % self.args[0])
+
+class TooMuchRemoteBranchesToFetch(ObjectError): pass

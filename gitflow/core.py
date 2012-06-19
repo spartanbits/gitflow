@@ -22,7 +22,7 @@ from gitflow.util import itersubclasses
 from gitflow.exceptions import (NotInitialized, BranchExistsError,
                                 BranchTypeExistsError, MergeConflict,
                                 NoSuchRemoteError, NoSuchBranchError,
-                                Usage, BadObjectError, WorkdirIsDirtyError)
+                                Usage, BadObjectError, WorkdirIsDirtyError, TooMuchRemoteBranchesToFetch)
 
 __copyright__ = "2010-2011 Vincent Driessen; 2012 Hartmut Goebel"
 __license__ = "BSD"
@@ -729,8 +729,12 @@ class GitFlow(object):
         # create remote branch
         origin = self.origin()
         info = origin.push('%s:refs/heads/%s' % (full_name, full_name))[0]
-        origin.fetch()
-        # configure remote tracking
+	try:
+		origin.fetch()
+	except AssertionError:
+		raise TooMuchRemoteBranchesToFetch
+
+	# configure remote tracking
         repo.branches[full_name].set_tracking_branch(info.remote_ref)
         return full_name
 
