@@ -195,7 +195,7 @@ class GitFlow(object):
 
     def get_last_commit_message(self,branch):
         git = self.repo.git
-        return git.get_object_data(branch)[-1].split('\n\n')[-1].strip()
+        return '\n\n'.join(git.get_object_data(branch)[-1].split('\n\n')[1:])
 
     def is_initialized(self):
         return (self.repo and
