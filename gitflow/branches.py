@@ -254,9 +254,6 @@ class BranchManager(object):
         if not self._is_single_commit_branch(into, full_name):
             kwargs['no_ff'] = True
         if message is not None:
-            message = (message
-                       % dict(name=full_name, identifier=self.identifier,
-                              short_name=name))
             kwargs['message'] = message
         # `git merge` does not send the error message to stderr, thus
         # we need to capture stdout manually :-(
