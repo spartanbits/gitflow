@@ -151,9 +151,8 @@ class FeatureCommand(GitFlowCommand):
         gitflow = GitFlow()
         # :fixme: Why does the sh-version not require a clean working dir?
         # NB: `args.name` is required since the branch must not yet exist
-        # :fixme: get default value for `base`
         gitflow.start_transaction('create feature branch %s (from %s)' % \
-                (args.name, args.base))
+                (args.name, args.base if args.base else gitflow.develop_name()))
         try:
             branch = gitflow.create('feature', args.name, args.base,
                                     fetch=args.fetch)
@@ -162,6 +161,7 @@ class FeatureCommand(GitFlowCommand):
             raise
         except Exception, e:
             die("Could not create feature branch %r" % args.name, e)
+        args.base = args.base if args.base else gitflow.develop_name()
         print
         print "Summary of actions:"
         print "- A new branch", branch, "was created, based on", args.base

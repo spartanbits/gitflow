@@ -22,7 +22,7 @@ from gitflow.util import itersubclasses
 from gitflow.exceptions import (NotInitialized, BranchExistsError,
                                 BranchTypeExistsError, MergeConflict,
                                 NoSuchRemoteError, NoSuchBranchError,
-                                Usage, BadObjectError)
+                                Usage, BadObjectError, WorkdirIsDirtyError, TooMuchRemoteBranchesToFetch)
 
 __copyright__ = "2010-2011 Vincent Driessen; 2012 Hartmut Goebel"
 __license__ = "BSD"
@@ -188,6 +188,15 @@ class GitFlow(object):
         self._init_develop_branch()
         return self
 
+    def is_single_commit_branch(self, from_, to):
+        git = self.repo.git
+        commits = git.rev_list('%s...%s' % (from_, to), n=2).split()
+        return len(commits) == 1
+
+    def get_last_commit_message(self,branch):
+        git = self.repo.git
+        return git.get_object_data(branch)[-1].split('\n\n')[-1].strip()
+
     def is_initialized(self):
         return (self.repo and
                 self.is_set('gitflow.branch.master') and
@@ -226,6 +235,15 @@ class GitFlow(object):
     def set(self, setting, value):
         section, option = self._parse_setting(setting)
         self.repo.config_writer().set_value(section, option, value)
+
+    def set_option(self, section, option, value):
+        self.repo.config_writer().set_value(section, option, value)
+
+    def get_option(self, section, option):
+        try:
+            return self.repo.config_reader().get_value(section, option)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            return None
 
     def is_set(self, setting):
         return self.get(setting, None) is not None
@@ -277,6 +295,10 @@ class GitFlow(object):
                     if isinstance(r, RemoteReference)]
         else:
             return [r.name for r in self.repo.branches]
+
+    @requires_repo
+    def active_branch(self):
+        return self.repo.active_branch.name
 
     @requires_repo
     def nameprefix_or_current(self, identifier, prefix):
@@ -354,12 +376,12 @@ class GitFlow(object):
         return (name, b.commit.hexsha, b == active_branch)
 
     @requires_repo
-    def is_dirty(self):
+    def is_dirty(self, untracked_files=False):
         """
         Returns whether or not the current working directory contains
         uncommitted changes.
         """
-        return self.repo.is_dirty()
+        return self.repo.is_dirty(untracked_files=untracked_files)
 
     @requires_repo
     def has_staged_commits(self):
@@ -418,7 +440,7 @@ class GitFlow(object):
         remote_branch = self.origin_name(branch)
         if remote_branch in self.branch_names(remote=True):
             if fetch:
-                repo.fetch(remote_branch)
+                self.origin().fetch(branch)
             self.require_branches_equal(branch, remote_branch)
 
     @requires_repo
@@ -585,7 +607,7 @@ class GitFlow(object):
 
     @requires_initialized
     def finish(self, identifier, name, fetch, rebase, keep, force_delete,
-               tagging_info):
+               tagging_info, push = False, message = None, keep_remote=False):
         """
         Finishes a branch of the given type, with the given short name.
 
@@ -603,12 +625,10 @@ class GitFlow(object):
             self.require_no_merge_conflict()
         except MergeConflict, e:
             raise Usage(e,
-                        "You can then complete the finish by running it again:",
-                        "    git flow %s finish %s" % (identifier, name)
-                        )
+                        "Please resolve conflict push changes to remote and then you can complete the finish by running this command again")
         return mgr.finish(mgr.shorten(branch.name), fetch=fetch, rebase=rebase,
-                          keep=keep, force_delete=force_delete,
-                          tagging_info=tagging_info)
+                          keep=keep, force_delete=force_delete, keep_remote=keep_remote,
+                          tagging_info=tagging_info, push = push, message = message)
 
     @requires_initialized
     def checkout(self, identifier, name):
@@ -709,9 +729,14 @@ class GitFlow(object):
         # create remote branch
         origin = self.origin()
         info = origin.push('%s:refs/heads/%s' % (full_name, full_name))[0]
-        origin.fetch()
-        # configure remote tracking
+	try:
+		origin.fetch()
+	except AssertionError:
+		raise TooMuchRemoteBranchesToFetch
+
+	# configure remote tracking
         repo.branches[full_name].set_tracking_branch(info.remote_ref)
+        return full_name
 
 
     @requires_initialized
@@ -800,3 +825,24 @@ class GitFlow(object):
         branch = repo.create_head(full_name, remote_branch)
         branch.set_tracking_branch(remote_branch)
         return branch.checkout()
+
+    @requires_initialized
+    def change_last_commit_message(self,identifier, name, message):
+        if self.repo.is_dirty(untracked_files=True):
+            raise WorkdirIsDirtyError('Your working dir is dirty. You have changes not commited in the index')
+
+        self.checkout(identifier, name)
+        #remove remote branch due to we are changing the history
+        full_branch_name = self.get_prefix(identifier) + name
+        self.origin().push(':'+full_branch_name)
+        self.repo.git.reset('HEAD^', **{'soft': True})
+        self.repo.git.commit('.', **{'message': message})
+
+    @requires_initialized
+    def remote_prune(self, delete=False, name='origin', ):
+        remote = self.require_remote(name)
+        stale_refs = remote.stale_refs
+        ret_value = [str(i) for i in stale_refs]
+        if delete:
+            RemoteReference.delete(self.repo, *stale_refs)
+        return ret_value

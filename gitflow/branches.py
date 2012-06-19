@@ -266,7 +266,7 @@ class BranchManager(object):
         except GitCommandError, e:
             txt = stdout.getvalue().rstrip()
             if e.stderr:
-                text = text + '\n' + e.stderr
+                txt = txt + '\n' + e.stderr
             raise MergeError(txt)
 
     def delete(self, name, force=False):
@@ -315,8 +315,8 @@ class FeatureBranchManager(BranchManager):
             name, base, fetch=fetch, must_be_on_default_base=False)
 
 
-    def finish(self, name, fetch=False, rebase=False, keep=False,
-               force_delete=False, push=False, tagging_info=None):
+    def finish(self, name, fetch=False, rebase=False, keep=False, keep_remote=False,
+               force_delete=False, push=False, tagging_info=None, message=None):
         """
         Finishes the branch of type `feature` named :attr:`name`.
         Finishing means that:
@@ -341,18 +341,27 @@ class FeatureBranchManager(BranchManager):
         assert not tagging_info, "FeatureBranchManager does not support tagging"
         gitflow = self.gitflow
         full_name = self.full_name(name)
+
         gitflow.must_be_uptodate(full_name, fetch=fetch)
-        gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
+
+        #If the branch is not merged we fetch new changes. If merged we could come from
+        #resolving conflicts
+        if not gitflow.is_merged_into(full_name, gitflow.develop_name()):
+            gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
+
         if rebase:
             gitflow.rebase(self.identifier, name, interactive=False)
 
         to_push = [self.gitflow.develop_name()]
 
+        if not message:
+            message = ''
         self.merge(name, self.gitflow.develop_name(),
-                   'Finished %(identifier)s %(short_name)s.')
+                   "Merged feature '%s' onto %s.\n%s" % (name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
-            to_push.append(':'+full_name)
+            if not keep_remote:
+                to_push.append(':'+full_name)
         if push:
             gitflow.origin().push(to_push)
 
@@ -393,22 +402,31 @@ class ReleaseBranchManager(BranchManager):
             version, base, fetch=fetch, must_be_on_default_base=True)
 
 
-    def finish(self, name, fetch=False, rebase=False, keep=False,
-               force_delete=False, push=False, tagging_info=None):
+    def finish(self, name, fetch=False, rebase=False, keep=False, keep_remote=False,
+               force_delete=False, push=False, tagging_info=None, message = None):
         assert rebase == False, "Rebasing a release branch does not make any sense."
         # require release branch to exist
         # if flag-fetch: fetch master und develop
         #   diese muessen dann gleich $ORIGIN/master bzw. $ORIGIN/develop sein
         gitflow = self.gitflow
         full_name = self.full_name(name)
+
         gitflow.must_be_uptodate(full_name, fetch=fetch)
-        gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
-        gitflow.must_be_uptodate(gitflow.master_name(), fetch=fetch)
+
+        #If the branch is not merged we fetch new changes. If merged we could come from
+        #resolving conflicts
+        if not gitflow.is_merged_into(full_name, gitflow.develop_name()):
+            gitflow.must_be_uptodate(gitflow.develop_name(), fetch=fetch)
+
+        if not gitflow.is_merged_into(full_name,gitflow.master_name()):
+            gitflow.must_be_uptodate(gitflow.master_name(), fetch=fetch)
 
         to_push = [self.gitflow.develop_name(), self.gitflow.master_name()]
 
+        if not message:
+            message = ''
         self.merge(name, self.gitflow.master_name(),
-                'Finished %s %s.' % (self.identifier, name))
+                "Merged %s '%s' onto %s. %s" % (self.identifier, name, self.gitflow.master_name(), message))
 
         tag = None
         if tagging_info is not None:
@@ -428,10 +446,11 @@ class ReleaseBranchManager(BranchManager):
         # describe' on either branch
         self.merge(tag or self.gitflow.master(),
                    self.gitflow.develop_name(),
-                   'Finished %s %s.' % (self.identifier, name))
+                   "Merged %s '%s' onto %s.\n%s" % (self.identifier, name, self.gitflow.develop_name(), message))
         if not keep:
             self.delete(name, force=force_delete)
-            to_push.append(':'+full_name)
+            if not keep_remote:
+                to_push.append(':'+full_name)
         if push:
             gitflow.origin().push(to_push)
 
